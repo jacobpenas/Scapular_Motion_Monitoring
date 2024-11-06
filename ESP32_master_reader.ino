@@ -1,6 +1,8 @@
 #include "Wire.h"
 
-#define I2C_DEV_ADDR 0x02
+#define I2C_DEV_ADDR 0x02           // first slave address
+#define N1 2                        // number of slaves
+#define N2 6                        // number of bytes to request
 
 uint32_t i = 0;
 
@@ -14,19 +16,24 @@ void setup() {
 void loop() {
   delay(5000);
 
-  // Write message to the slave
-  Wire.beginTransmission(I2C_DEV_ADDR);
-  Wire.printf("Hello World! %lu", i++);
-  uint8_t error = Wire.endTransmission(true);
-  Serial.printf("endTransmission: %u\n", error);
+  // Write message to each slave
+  for (int j = 0; j < N1; j++) {
+    Wire.beginTransmission(I2C_DEV_ADDR + j);
+    Wire.printf("Hello World! %lu", i++);
+    uint8_t error = Wire.endTransmission(true);
+    Serial.printf("endTransmission (slave %d): %u\n", j, error);
+  }
 
-  // Read 6 bytes from the slave
-  uint8_t bytesReceived = Wire.requestFrom(I2C_DEV_ADDR, 6);
+  delay(1000);
   
-  Serial.printf("requestFrom: %u\n", bytesReceived);
-  if ((bool)bytesReceived) {  //If received more than zero bytes
-    uint8_t temp[bytesReceived];
-    Wire.readBytes(temp, bytesReceived);
-    log_print_buf(temp, bytesReceived);
+  // Read 6 bytes from each slave
+  for (int j = 0; j < N1; j++) {
+    uint8_t bytesReceived = Wire.requestFrom(I2C_DEV_ADDR + j, N2);
+    Serial.printf("requestFrom (slave %d): %u\n", j, bytesReceived);
+    if ((bool)bytesReceived) {
+      uint8_t temp[bytesReceived];
+      Wire.readBytes(temp, bytesReceived);
+      log_print_buf(temp, bytesReceived);
+    }
   }
 }
