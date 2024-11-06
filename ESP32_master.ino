@@ -1,13 +1,13 @@
 #include "Wire.h"
 #define I2C_SLAVE_ADDR 0x02
 #define N1 1
-#define N2 10
+#define N2 4
 #define trigger 0xFF
 
 enum states {send_trigger, delay_state, receive_data, write_data_file};
 states currentState = send_trigger;
 
-uint8_t dataBuffer[N1][N2];
+uint8_t dataBuffer[N1][25];
 int bufferLength[N1];
 
 void setup() {
@@ -25,7 +25,7 @@ void loop() {
       currentState = delay_state;
       break;
     case delay_state:
-      delay(800);
+      delay(5000);
       currentState = receive_data;
       break;
     case receive_data:
@@ -43,6 +43,7 @@ void sendTrigger() {
   for (int i = 0; i < N1; i++) {
     Wire.beginTransmission(I2C_SLAVE_ADDR + i);
     Wire.write(trigger);
+    delay(500);
     uint8_t error = Wire.endTransmission();
     Serial.printf("Sent trigger to slave %d\n", i);
     Serial.printf("Error: %u\n", error);
@@ -51,7 +52,7 @@ void sendTrigger() {
 
 void receiveData() {
   for (int i = 0; i < N1; i++) {
-    uint8_t bytes = Wire.requestFrom(I2C_SLAVE_ADDR + i, N2);
+    uint8_t bytes = Wire.requestFrom(I2C_SLAVE_ADDR + i, 25);
     uint8_t temp[bytes];
     Wire.readBytes(temp, bytes);
     bufferLength[i] = bytes;
